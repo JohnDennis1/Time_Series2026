@@ -4,6 +4,10 @@ author: "John Dennis"
 output: pdf_document
 ---
 
+```{r,echo=FALSE}
+library(ggplot2)
+```
+
 ### Problem 1
 
 An explicit example of uncorrelated variables that aren't independent would be: $$Y=X^2$$
@@ -20,3 +24,79 @@ corr_val
 These two variables are **dependent** as X defines Y, but they're **uncorrelated**.
 
 ### Problem 2
+
+Consider: $$X_t = U\sin t + V \cos t, \quad t \in [0,2\pi]$$\
+
+##### Part A
+
+My guess is that because $X_t$ is the sum of two waves, the outcome will be another wave with a different amplitude and phase shift. Each realization will look different due to the randomness of U and V, but will all be sine curves. The following property between the sum of cosine and sine wave will be observed:
+
+$$a \cos t+ b \sin t = R \sin(t+\phi)\ \ \textrm{such that}\ \ R = \sqrt{a^2+b^2}\ \ \textrm{and}\ \ \phi = \arctan\frac{a}{b}$$
+
+##### Part B
+
+Looking at the 3 realizations, they follow sinusoidal curves as shown in the plot below.
+
+```{r, error=FALSE,echo=FALSE}
+set.seed(303)
+
+cont_process <- function(U,V,t){
+  DataFrame <- data.frame(t = t) #initializing data frame with t_vals
+  num_paths = length(U) #find the length of the U vector with n standard norm vars
+  for (i in 1:num_paths){
+    x_t = U[i] *sin(t) + V[i] *cos(t) #evaluating path with U,V[i]
+    col_name = paste0("Realization_",as.character(i)) #Name that will be used for dataframe columns
+    DataFrame[[col_name]] <- x_t
+  }
+  return(DataFrame)
+}
+
+U <- rnorm(3)
+V <- rnorm(3)
+
+t_vals <- seq(0,2*pi, length.out = 100)
+#X_t = cont_process(U,V,t_vals)
+
+df = cont_process(U,V,t_vals)
+
+realizations <- ggplot(df, aes(x = t)) +
+  geom_line(aes(y = Realization_1, color = "Realization 1")) +
+  geom_line(aes(y = Realization_2, color = "Realization 2")) +
+  geom_line(aes(y = Realization_3, color = "Realization 3")) +
+  labs(color = "Sample Path",
+       x = "t",
+       y = expression(X[t]))
+realizations
+```
+
+Referring to Part A, we expect that each curve follows the identity. Shown below are the values for U and V. We can then take these values and find the expected amplitude and phase shift of the sum of sine and cosine curves.
+
+```{r,echo=FALSE}
+u1 = U[1]
+u2 = U[2]
+u3 = U[3]
+v1 = V[1]
+v2 = V[2]
+v3 = V[3]
+
+msgU <- sprintf("U = %.3f, %.3f, and %.3f", u1, u2, u3)
+msgV <- sprintf("V = %.3f, %.3f, and %.3f", v1, v2, v3)
+
+msgU
+msgV
+```
+
+For example, for Realization 1 the equation is:
+
+$$ X_t = -0.497\sin t + 0.069\cos t$$ And with some simple calculations, we can find that values of the amplitude and phase shift of the sum of the curves.
+
+```{r, echo=FALSE}
+R = sqrt(U[1]^2+V[1]^2)
+phi = atan2(V[1],U[1])
+msgR_Phi <- sprintf("Amplitude R = %.3f and phase shift Phi = %.3f",R,phi)
+msgR_Phi
+```
+
+Thus yielding a new equation of:
+
+$$X_t = 0.502 \sin(t +3.004)$$
