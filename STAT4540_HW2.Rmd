@@ -1,0 +1,22 @@
+---
+title: "STAT4540_HW2"
+author: "John Dennis"
+output: pdf_document
+---
+
+### Problem 1
+
+An explicit example of uncorrelated variables that aren't independent would be: $$Y=X^2$$
+
+We can show this through assigning X to a uniform distribution, $X\sim U(0,1)$, and then defining Y as previously stated.
+
+```{r, error=FALSE}
+X <- runif(1,0,1)
+Y <- X^2
+corr_val = cor(X,Y, method = "pearson")
+corr_val
+```
+
+These two variables are **dependent** as X defines Y, but they're **uncorrelated**.
+
+### Problem 2
