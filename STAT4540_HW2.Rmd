@@ -27,13 +27,13 @@ These two variables are **dependent** as X defines Y, but they're **uncorrelated
 
 Consider: $$X_t = U\sin t + V \cos t, \quad t \in [0,2\pi]$$\
 
-##### Part A
+#### Part A
 
 My guess is that because $X_t$ is the sum of two waves, the outcome will be another wave with a different amplitude and phase shift. Each realization will look different due to the randomness of U and V, but will all be sine curves. The following property between the sum of cosine and sine wave will be observed:
 
 $$a \cos t+ b \sin t = R \sin(t+\phi)\ \ \textrm{such that}\ \ R = \sqrt{a^2+b^2}\ \ \textrm{and}\ \ \phi = \arctan\frac{a}{b}$$
 
-##### Part B
+#### Part B
 
 Looking at the 3 realizations, they follow sinusoidal curves as shown in the plot below.
 
@@ -100,3 +100,188 @@ msgR_Phi
 Thus yielding a new equation of:
 
 $$X_t = 0.502 \sin(t +3.004)$$
+
+#### Part C
+
+To determine if $\{X_t\}$ is weakly stationary we must prove or disprove that it meets the following requirements
+
+1)  $\textrm{E}[x_t^2]< \infty$
+
+2)  $\mu_t = \textrm{E}[x_t] = \mu,\ \ \forall t$
+
+3)  $\gamma(h) = \textrm{Cov}(x_{t+h},x_t)$ depends only on $h$\
+
+Starting with number one, keeping in mind that $U$ and $V$ are independent variables, the variance is:
+
+$$\textrm{Var}(X_t) = \textrm{Var}(U\sin t+ V\cos t) = \sin^2t\textrm{Var}(U)+\cos^2t\textrm{Var}(V) = \sin^2t+\cos^2t=1$$
+
+This value is finite and thus satisfies our first requirement. Looking at the next requirement we must calculate the mean function:
+
+$$\textrm{E}[X_t] = \textrm{E}[U\sin t+ V\cos t] = \sin t\ \textrm{E}[U]+\cos t\ \textrm{E}[V]= 0$$
+
+Because each variable has mean zero, the mean function becomes zero as well which satisfies the second requirement. Lastly, we must calculate $\gamma(h) = \textrm{Cov}(X_{t+h},X_t)$ to determine if it depends only on the lag, $h$. We can further expand this:
+
+$$\textrm{Cov}(X_{t+h},X_t) = \textrm{Cov}(U\sin(t+h)+V\cos(t+h),U\sin t+V\cos t)\\ =\sin(t+h)\sin t\ \mathrm{Var}(U) +\cos(t+h)\cos t\ \mathrm{Var}(V)$$
+
+and $U$ and $V$ are independent random variables with $\mathrm{Var}(U)=\mathrm{Var}(V)=1$, we have:
+
+$$\gamma(h)= \sin(t+h)\sin t +\cos(t+h)\cos t$$
+
+Using the trig identity for $\cos(a-b) = \sin a\sin b+\cos a\cos b$ where $a=(t+h)$ and $b=t$ we get:
+
+$$\gamma(h)= \cos((t+h)-t) = \cos(h)$$
+
+which satisfies our last requirement. Therefore we can conclude that $\{X_t\}$ is a weakly stationary process.
+
+### Problem 3
+
+#### Part A
+
+To prove that $\textrm{MSE}(A) = \textrm{E}[(x_{t+\ell}-Ax_t)^2]$ is minimized by $A=\rho(\ell)$ we start with some definitions:
+
+It's known that $$\textrm{E}[X_t]=\mu_t = 0\ \ \textrm{and}\ \ \gamma(h) = \textrm{Cov}(x_t, x_{t+h})\ \ \textrm{and}\ \ \rho(h) = \frac{\gamma(h)}{\gamma(0)}$$
+
+Given the definition for mean squared error of A, we can expand the inside of the expectation and get:
+
+$$\textrm{MSE}(A) = \textrm{E}[x_{t+\ell}^2-2Ax_tx_{t+\ell}+A^2x_t^2] = \textrm{E}[x_{t+\ell}^2]-2A\textrm{E}[x_tx_{t+\ell}]+A^2\textrm{E}[x_t^2]$$
+
+Because of stationarity, we can say that:
+
+$$\textrm{E}[x_{t+\ell}^2] = \gamma(0),\ \ \textrm{E}[x_t^2] = \gamma(0), \ \ \textrm{E}[x_tx_{t+\ell}] = \gamma(\ell)$$
+
+This simplifies the problem to:
+
+$$\textrm{MSE}(A) =\gamma(0) - 2A\gamma(\ell) + A^2\gamma(0)$$
+
+To minimize MSE:
+
+$$\frac{d}{dA}\textrm{MSE}(A) = 0 \implies \textrm{MSE}'(A) = - 2\gamma(\ell) + 2A\gamma(0)=0$$
+
+And to solve for $A$ we simply add $2\gamma(\ell)$ and divide by $2\gamma(0)$ which yields:
+
+$$A = \frac{2\gamma(\ell)}{2\gamma(0)} = \frac{\gamma(\ell)}{\gamma(0)} = \rho(\ell)$$
+
+#### Part B
+
+To show that the minimum mean-square prediction error is:
+
+$$\textrm{MSE}(A) = \gamma(0)[1-\rho(\ell)^2]$$
+
+We can start from the fact that we know $A=\rho(\ell)=\frac{\gamma(\ell)}{\gamma(0)}$ and can substitute into the simplified version:
+
+$$\textrm{MSE}(A) =\gamma(0) - 2\rho(\ell)\gamma(\ell) + \frac{\gamma(\ell)^2}{\gamma(0)^2}\gamma(0)=\gamma(0) - 2\rho(\ell)\gamma(\ell) + \rho(\ell)\gamma(\ell)=\gamma(0) - \rho(\ell)\gamma(\ell)$$
+
+We can multiply by $1 = \frac{\gamma(0)}{\gamma(0)}$ and we'll get the result:
+
+$$\frac{\gamma(0)}{\gamma(0)}(\gamma(0) - \rho(\ell)\gamma(\ell)) = \gamma(0) - \rho(\ell)^2\gamma(0)=\gamma(0)[1-\rho(\ell)^2] $$
+
+#### Part C
+
+### Problem 4
+
+#### Part A
+
+Considering that $x_t=w_t$ and $y_t = w_t - \theta w_{t-1}+u_t$ where $w\sim \textrm{WN}(0,\sigma_w^2)$ and $u\sim \textrm{WN}(0,\sigma_u^2)$ we can express the ACF, $\rho_y(h), \ \ h=0,|1|,|2|,...$ as the following.
+
+For $h=0$ we simply have:
+
+$$\rho_y(0) = \frac{\gamma_y(0)}{\gamma_y(0)}=1$$
+
+For $|h|=1$ we have:
+
+$$\rho_y(1) = \frac{\gamma_y(1)}{\gamma_y(0)}=\frac{\textrm{Cov}(y_t,y_{t+1})}{\textrm{Var}(y_t)}$$
+
+Breaking down $\textrm{Var}(y_t)$ we get:
+
+$$\textrm{Var}(y_t) = \textrm{Var}(w_t - \theta w_{t-1}+u_t)=\textrm{Var}(w_t)+\textrm{Var}(\theta w_{t-1})+\textrm{Var}(u_t) = \sigma_w^2+\theta^2\sigma_w^2+\sigma_u^2 = (1+\theta^2)\sigma_w^2+\sigma_u^2$$
+
+And then breaking down $\textrm{Cov}(y_t,y_{t+1})$ we get:
+
+$$\textrm{Cov}(w_t - \theta w_{t-1}+u_t,w_{t+1} - \theta w_t+u_{t+1}) = \textrm{Cov}(w_t,-\theta w_t)=-\theta\textrm{Cov}(w_t, w_t)=-\theta \textrm{Var}(w_t) = -\theta \sigma_w^2$$
+
+Because only the $w_t$ and $-\theta w_t$ parts overlap, our expression is simpler. Looking at $\rho(1)$ again:
+
+$$\rho_y(1) =\frac{\textrm{Cov}(y_t,y_{t+1})}{\textrm{Var}(y_t)} = \frac{-\theta \sigma_w^2}{(1+\theta^2)\sigma_w^2+\sigma_u^2}$$
+
+For $|h|\geq2$ because the terms have no overlap, all the covariances are zero:
+
+$$\rho_y(2) = \frac{\gamma_y(2)}{\gamma_y(0)}=\frac{\textrm{Cov}(y_t,y_{t+2})}{\textrm{Var}(y_t)}= \frac{\textrm{Cov}(w_t - \theta w_{t-1}+u_t,w_{t+2} - \theta w_{t+1}+u_{t+2})}{\textrm{Var}(y_t)}=0$$
+
+#### Part B
+
+To determine the Cross Correlation Function (CCF), we must first define the Cross Covariance Function:
+
+$$\gamma_{xy}(h)= \textrm{Cov}(x_{t+h},y_t) = \textrm{Cov}(w_{t+h},w_t - \theta w_{t-1}+u_t)$$
+
+On observation, one can tell that only values of $h$ that equal $0$ and $-1$ will yield results. It's also important to define $\gamma_x(0) = \textrm{Var}(w_t)$ and $\gamma_y(0)$ as $\sigma_w^2$ and $(1+\theta^2)\sigma_w^2+\sigma_u^2$, respectively.
+
+Using the definition of the CCF:
+
+$$\rho_{xy}(h)=\frac{\gamma_{xy}(h)}{\sqrt{\gamma_x(0)\gamma_y(0)}}$$
+
+we can define our CCF for $h=0$:
+
+$$\rho_{xy}(0)=\frac{\gamma_{xy}(0)}{\sqrt{\gamma_x(0)\gamma_y(0)}} = \frac{\textrm{Cov}(w_t,w_t - \theta w_{t-1}+u_t)}{\sigma_w\sqrt{(1+\theta^2)\sigma_w^2+\sigma_u^2}}$$
+
+Because $w_t$ is white noise and independent of $w_{t-1}$ and $u_t$, all the cross terms become zero and we get:
+
+$$\frac{\textrm{Cov}(w_t,w_t)}{\sigma_w\sqrt{(1+\theta^2)\sigma_w^2+\sigma_u^2}}= \frac{\textrm{Var}(w_t)}{\sigma_w\sqrt{(1+\theta^2)\sigma_w^2+\sigma_u^2}} =\frac{\sigma_w}{\sqrt{(1+\theta^2)\sigma_w^2+\sigma_u^2}} $$
+
+And for $h=-1$ we obtain the result:
+
+$$\rho_{xy}(-1)=\frac{\gamma_{xy}(-1)}{\sqrt{\gamma_x(0)\gamma_y(0)}} = \frac{\textrm{Cov}(w_{t-1},w_t - \theta w_{t-1}+u_t)}{\sigma_w\sqrt{(1+\theta^2)\sigma_w^2+\sigma_u^2}}$$
+
+Similarly, Because $w_{t-1}$ is white noise and independent of $w_{t}$ and $u_t$, all the cross terms become zero and we get:
+
+$$\frac{\textrm{Cov}(w_{t-1},-\theta w_{t-1})}{\sigma_w\sqrt{(1+\theta^2)\sigma_w^2+\sigma_u^2}}= \frac{-\theta \textrm{Cov}(w_{t-1},w_{t-1})}{\sigma_w\sqrt{(1+\theta^2)\sigma_w^2+\sigma_u^2}} = \frac{-\theta \textrm{Var}(w_{t-1})}{\sigma_w\sqrt{(1+\theta^2)\sigma_w^2+\sigma_u^2}}=\frac{-\theta \sigma_w}{\sqrt{(1+\theta^2)\sigma_w^2+\sigma_u^2}} $$
+
+For any values of $h$ other than $0$ or $-1$, the terms will all be zero, thus $\rho_{xy} =0, \ \ h\neq0,1$
+
+#### Part C
+
+To show that $x_t$ and $y_t$ are jointly weakly stationary, we must show two things:
+
+1)  $x_t$ and $y_t$ must be marginally weakly stationary
+
+2)  The CCF is only a function of the lag, $h$\
+
+We've already shown that the CCF is a function of only $h$ so now we must show that each time series is marginally w.s. The requirements for weakly stationary are:
+
+1)  $\textrm{E}[x_t^2]< \infty$
+
+2)  $\mu_t = \textrm{E}[x_t] = \mu,\ \ \forall t$
+
+3)  $\gamma(h) = \textrm{Cov}(x_{t+h},x_t)$ depends only on $h$\
+
+Looking at $x_t = w_t$, we know that white noise has a finite variance, $\sigma_w^2$, and a constant mean of zero. And it's auto covariance function is only a function of $h$:
+
+$$
+\gamma_x(h) = \left\{ 
+\begin{array}{ll}
+    0 & \text{if } h \neq 0 \\
+    \sigma_w^2 & \text{if } h = 0
+\end{array}
+\right.
+$$
+
+Lastly, looking at $y_t = w_t - \theta w_{t-1}+u_t$, we know it's composed of independent white noise terms so the expectation becomes $0 -\theta(0)+0 =0$ which is a constant mean. The variance or
+
+$$\gamma_y(0) = \textrm{Cov}(y_t,y_t) = \textrm{Cov}(w_t - \theta w_{t-1}+u_t,w_t-\theta w_{t-1}+u_t)$$
+
+And because all the white noise terms are independent from each other, only Covariances with identical terms will remain and simplify to variances:
+
+$$\textrm{Var}(w_t)+ \theta^2\textrm{Var}(w_{t-1})+\textrm{Var}(u_t) = \sigma_w^2+\theta^2\sigma_w^2+\sigma_u^2 = (1+\theta^2)\sigma_w^2+\sigma_u^2$$
+
+This value is finite and the last thing we need to check is if the auto covariance function is dependent on only the lag, $h$. Examining it, it satisfies this requirement.
+
+$$
+\gamma_y(h) = \left\{ 
+\begin{array}{ll}
+    (1+\theta^2)\sigma_w^2+\sigma_u^2 & \text{if } h = 0 \\
+    -\theta \sigma_w^2 & \text{if } |h| = 1 \\
+    0 & \text{if } |h| \geq 2
+\end{array}
+\right.
+$$
+
+Because both $x_t$ and $y_t$ are marginally weakly stationary, we can conclude that they are jointly weakly stationary.
