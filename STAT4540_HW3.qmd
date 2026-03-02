@@ -1,0 +1,9 @@
+---
+title: "STAT4540_HW3"
+author: "John Dennis"
+format: pdf
+---
+
+### Problem 1
+
+$X_t = W_t+\Theta W_{t-1}$ where $W_t \sim WN(0,\sigma^2)$ and $\Theta \in \mathbb{R}$
