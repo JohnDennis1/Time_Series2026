@@ -24,6 +24,16 @@ data_clean <- data %>%
 
 ggplot(data_clean, aes(x=Date,y=Page.Loads)) +
   geom_line()
+```
 
+```{r,results='hide'}
 acf1(data_clean$Page.Loads)
+```
+
+```{r}
+model1 <- sarima(data_clean$Page.Loads, p = 2, d = 0, q = 1)
+```
+
+```{r}
+model2 <- sarima(data_clean$Page.Loads, p = 1, d = 0, q = 2)
 ```
