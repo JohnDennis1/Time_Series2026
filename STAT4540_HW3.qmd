@@ -4,6 +4,26 @@ author: "John Dennis"
 format: pdf
 ---
 
-### Problem 1
+```{r,message=FALSE}
+library(tidyverse)
+library(ISLR2)
+library(astsa)
+library(ggplot2)
+library(lubridate)
+```
 
-$X_t = W_t+\Theta W_{t-1}$ where $W_t \sim WN(0,\sigma^2)$ and $\Theta \in \mathbb{R}$
+### Problem 3
+
+```{r,message=FALSE, results='hide'}
+data <- read.csv("website-visitors.csv")
+
+data_clean <- data %>%
+  select(Date,
+         Page.Loads) %>%
+  mutate(Date = as.Date(Date))
+
+ggplot(data_clean, aes(x=Date,y=Page.Loads)) +
+  geom_line()
+
+acf1(data_clean$Page.Loads)
+```
