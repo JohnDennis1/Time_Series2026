@@ -1,0 +1,34 @@
+---
+title: "STAT4540_HW4"
+author: "John Dennis"
+format: pdf
+---
+
+```{r,echo=FALSE}
+library(astsa)
+```
+
+#### Problem 1
+
+Considering the given $AR(2)$, $X_t = X_{t-2}+W_t$ we can find the roots by grouping and solving for the roots:
+
+$$
+\begin{gathered}
+X_t = X_{t-2}+W_t \\
+X_t - X_{t-2} = W_t \\
+(1-B^2)X_t = W_t \\ 
+\end{gathered}
+$$
+
+Once we're here we can solve for the roots by setting $\phi(z)=0$. Note that we replace B with $z \in \mathbb{C}$:
+
+$$
+\begin{gathered}
+1-z^2 = 0 \\
+z^2 = 1 \implies \boxed{z = \pm1}
+\end{gathered}
+$$
+
+And because $\pm 1$ doesn't fall outside the unit circle, this $AR(2)$ process is not causal.
+
+#### Problem 2
