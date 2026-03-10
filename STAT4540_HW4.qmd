@@ -168,7 +168,7 @@ We'll plot the data and look for trends and seasonality.
 tsplot(df$dat.D, ylab = "dat.D")
 ```
 
-This seems pretty obviously not a white noise process. No mean zero and an irregular dip every $\sim25-35$ units or so. 
+This seems pretty obviously not a white noise process. No mean zero and an irregular dip every $\sim25-35$ units or so. The data has weird almost flat points  at these irregular dips especially at 160-170.
 
 ##### ACF and PACF Examination
 
@@ -178,9 +178,11 @@ acf1(df$dat.D)
 pacf(df$dat.D)
 ```
 
-The ACF and PACF are pretty valuable as they show that all the shown lag values fall within the 95% CI. This suggest that if the mean were zero, this would be a white noise process.
+The ACF and PACF are pretty valuable as they show that all the shown lag values fall within the 95% CI. This suggests that there is no significant autocorrelation between terms, but regardless, isn't a white noise process.
 
 ##### Model Selection
+
+Due to the structure of the data, no ARMA process is appropriate. Although no significant autocorrelation between terms exist, the data is very structured and doesn't resemble a consistent or known pattern.
 
 #### Time Series E
 
@@ -192,6 +194,8 @@ We'll plot the data and look for trends and seasonality.
 tsplot(df$dat.E, ylab = "dat.E")
 ```
 
+Visually, this is not a white noise process. It may be stationary with a mean around 15 or so, but it's not white noise. There doesn't seem to be any trends nor seasonality that could be removed. Prior to using an ARMA models, we'll center the mean at zero. One last thing to note is that it appears to have clusters of points above and below the points that may suggest Autoregressive behavior.
+
 ##### ACF and PACF Examination
 
 ```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
@@ -200,7 +204,27 @@ acf1(df$dat.E)
 pacf(df$dat.E)
 ```
 
+Looking at the ACF we can see there are about 4 lag spikes that lie outside the bounds, but none that are particularly large. On the other other the PACF goes to near zero after lag h=1, so perhaps we can observe the behavior from both ACF and PACF as Autoregressive which aligns with my previous hypothesis. Another thing to mention is that in both plots, there exists spikes at lag h=12 which may suggest this is annual seasonality.
+
 ##### Model Selection
+
+Prior to fitting an ARMA model, we must center the mean to zero and then fit a seasonal ARMA model to account for the lag spikes at h=12.
+
+```{r,results='hide',echo=FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
+centered_dat.E <- df$dat.E - mean(df$dat.E)
+model.E <- sarima(centered_dat.E, 1, 0, 0, 1, 0, 0, 12, details=FALSE)
+
+res.E <- resid(model.E$fit)
+
+par(mfrow = c(1, 2))
+
+acf1(res.E, main = "ACF of Residuals")
+
+qqnorm(res.E, main = "Normal Q-Q Plot")
+qqline(res.E, col = "blue")
+```
+
+After creating the model, there is near-zero lag values at h=1,2 and 12 which suggests that the immediate autocorrelation and seasonality was corrected. The spike at 13 may just be part of the 5% that don't fall within the bounds. The Q-Q plot has a worse fit for the values beyond -1 and 1, especially for +2. This suggests a right skew as the sample points are in a higher quantile than the theoretical quantile. We can consider the residuals to be white noise with $\sim95\%$ of the lag values within the bounds.
 
 #### Time Series F
 
@@ -212,12 +236,55 @@ We'll plot the data and look for trends and seasonality.
 tsplot(df$dat.F, ylab = "dat.F")
 ```
 
+This time series is not a white noise process by some pretty obvious signs. It's not mean zero and there's almost a negative linear trend. There also seems to be some sort of regular cyclic pattern as well that's happening pretty frequently. Prior to using an ARMA model, we'd have to remove a trend, regular seasonality, and make it mean zero.
+
 ##### ACF and PACF Examination
 
-```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
 par(mfrow = c(1, 2))
 acf1(df$dat.F)
 pacf(df$dat.F)
 ```
 
+Both ACF and PACF plots show strong autocorrelation that happens periodically with decreasing spikes at 1, 12, 24. The ACF is showing a slow decay with potential annual seasonality due to the lag at h = 12. This reinforces the idea that the this time series has strong seasonality and negative linear trend.
+
 ##### Model Selection
+
+In order to fit and ARMA model we need to consider a few things:
+
+- Making the time series mean zero
+- Removing the Negative Linear Trend
+- Removing the Seasonality
+
+And this will all be done using differencing in the `sarima()` function.
+
+```{r,results='hide',echo=FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
+centered_dat.F <- df$dat.F - mean(df$dat.F)
+model.F <- sarima(centered_dat.F, 0, 1, 0, 0, 1, 0, 12, details=FALSE)
+
+res.F <- resid(model.F$fit)
+
+par(mfrow = c(1, 2))
+
+acf1(res.F, main = "ACF of Residuals")
+
+qqnorm(res.F, main = "Normal Q-Q Plot")
+qqline(res.F, col = "blue")
+```
+
+After the filtering to remove the trend and seasonality it still appears to have seasonality at 12 and correlation at lag h=1,2. The Q-Q plot has an odd, but decent fit between -2 and 2. To revise the model I may add a q of 2 and Q of 1 because I see that in the ACF the correlation cuts off after lag h=2 and then there's a strong negatively correlated lag at lag h=12.
+
+```{r,results='hide',echo=FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
+model2.F <- sarima(centered_dat.F, 0, 1, 2, 0, 1, 1, 12, details=FALSE)
+
+res2.F <- resid(model2.F$fit)
+
+par(mfrow = c(1, 2))
+
+acf1(res2.F, main = "ACF of Residuals")
+
+qqnorm(res2.F, main = "Normal Q-Q Plot")
+qqline(res2.F, col = "blue")
+```
+
+The residuals are resembling a white noise process much more now with the lag spikes removed and everything falling within the 95% CI. The Q-Q plot shows a much worse fit outside -1 to 1 with ends suggesting heavy tails.
