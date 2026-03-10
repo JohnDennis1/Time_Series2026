@@ -50,17 +50,42 @@ df <- read.table("HWARMA.txt", header= TRUE)
 
 ##### Time Series A
 
-We'll plot the data and then its ACF to look for trends.
+##### Visual
 
-```{r,results='hide',echo = FALSE}
+We'll plot the data and look for trends and seasonality.
+
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
 tsplot(df$dat.A, ylab = "dat.A")
-acf1(df$dat.A)
 ```
 
-There are no obvious trends and this could potentially be white noise process. We'll fit an $MA(1)$ given the large spike at 1 within the ACF:
+There are no obvious trends and the time series doesn't exhibit any obvious heteroskedasticity. With this being said I would say that there is no trend or seasonality to remove prior to analyzing. Based solely on the raw data plot, it could be a white noise process considering:
 
-```{r,results='hide',echo=FALSE}
-model.A <- sarima(df$dat.A, 0,0,1)
+-   Mean is roughly zero
+-   No Patterns
+-   No Seasonality
+
+##### ACF and PACF Examination
+
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
+par(mfrow = c(1, 2))
+acf1(df$dat.A)
+pacf(df$dat.A)
+```
+
+Looking at the ACF there is a large spike at Lag = 1, before the rest of the spikes seem to slowly decay. The PACF has similar results that show a spike at 1 and then oscillating decay.
+
+We'll fit an $MA(1)$ given the large spike at 1 within the ACF:
+
+```{r,results='hide',echo=FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
+model.A <- sarima(df$dat.A, 0,0,1, details = FALSE)
+res.A <- resid(model.A$fit)
+
+par(mfrow = c(1, 2))
+
+acf(res.A, main = "ACF of Residuals")
+
+qqnorm(res.A, main = "Normal Q-Q Plot")
+qqline(res.A, col = "blue")
 ```
 
 ##### Time Series B
