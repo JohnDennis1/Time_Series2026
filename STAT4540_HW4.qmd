@@ -4,19 +4,21 @@ author: "John Dennis"
 format: pdf
 ---
 
-```{r,echo=FALSE}
+```{r,,message=FALSE,echo=FALSE}
 library(astsa)
+library(tidyverse)
+library(tseries)
 ```
 
 #### Problem 1
 
-Considering the given $AR(2)$, $X_t = X_{t-2}+W_t$ we can find the roots by grouping and solving for the roots:
+Considering the given $AR(2)$, $X_t = -0.9X_{t-2}+W_t$ we can find the roots by grouping and solving for the roots:
 
 $$
 \begin{gathered}
-X_t = X_{t-2}+W_t \\
-X_t - X_{t-2} = W_t \\
-(1-B^2)X_t = W_t \\ 
+X_t = -0.9X_{t-2}+W_t \\
+X_t + 0.9X_{t-2} = W_t \\
+(1+0.9B^2)X_t = W_t \\ 
 \end{gathered}
 $$
 
@@ -24,11 +26,69 @@ Once we're here we can solve for the roots by setting $\phi(z)=0$. Note that we 
 
 $$
 \begin{gathered}
-1-z^2 = 0 \\
-z^2 = 1 \implies \boxed{z = \pm1}
+1+0.9z^2 = 0 \\
+0.9z^2 = -1\\ 
+z^2 = -\frac{10}{9} \\
+\implies \boxed{z = \pm \sqrt{\frac{10}{9}}i= \pm1.054i}
 \end{gathered}
 $$
 
-And because $\pm 1$ doesn't fall outside the unit circle, this $AR(2)$ process is not causal.
+And because $\pm 1.054$ falls outside the unit circle, this $AR(2)$ process is causal. Now focusing on the ACF:
+
+```{r}
+ACF = ts(ARMAacf(ar=c(0,-0.9), lag=48), start=0, freq=12)
+tsplot(ACF, type="h", xlab="LAG", ylim=c(-1,1), gg=TRUE, col=4, xaxt="n")
+abline(h=0, col=8)
+mtext(side=1, at=seq(0,4,by=.5), text=seq(0,48,by=6), cex=.8)
+```
 
 #### Problem 2
+
+```{r,echo = FALSE}
+df <- read.table("HWARMA.txt", header= TRUE)
+```
+
+##### Time Series A
+
+We'll plot the data and then its ACF to look for trends.
+
+```{r,results='hide',echo = FALSE}
+tsplot(df$dat.A, ylab = "dat.A")
+acf1(df$dat.A)
+```
+
+There are no obvious trends and this could potentially be white noise process. We'll fit an $MA(1)$ given the large spike at 1 within the ACF:
+
+```{r,results='hide',echo=FALSE}
+model.A <- sarima(df$dat.A, 0,0,1)
+```
+
+##### Time Series B
+
+```{r,echo = FALSE}
+tsplot(df$dat.B, ylab = "dat.B")
+```
+
+##### Time Series C
+
+```{r,echo = FALSE}
+tsplot(df$dat.C, ylab = "dat.C")
+```
+
+##### Time Series D
+
+```{r,echo = FALSE}
+tsplot(df$dat.D, ylab = "dat.D")
+```
+
+##### Time Series E
+
+```{r,echo = FALSE}
+tsplot(df$dat.E, ylab = "dat.E")
+```
+
+##### Time Series F
+
+```{r,echo = FALSE}
+tsplot(df$dat.F, ylab = "dat.F")
+```
