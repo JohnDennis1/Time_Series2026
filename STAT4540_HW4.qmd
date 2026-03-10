@@ -10,7 +10,7 @@ library(tidyverse)
 library(tseries)
 ```
 
-#### Problem 1
+### Problem 1
 
 Considering the given $AR(2)$, $X_t = -0.9X_{t-2}+W_t$ we can find the roots by grouping and solving for the roots:
 
@@ -35,20 +35,20 @@ $$
 
 And because $\pm 1.054$ falls outside the unit circle, this $AR(2)$ process is causal. Now focusing on the ACF:
 
-```{r}
+```{r,echo=FALSE}
 ACF = ts(ARMAacf(ar=c(0,-0.9), lag=48), start=0, freq=12)
 tsplot(ACF, type="h", xlab="LAG", ylim=c(-1,1), gg=TRUE, col=4, xaxt="n")
 abline(h=0, col=8)
 mtext(side=1, at=seq(0,4,by=.5), text=seq(0,48,by=6), cex=.8)
 ```
 
-#### Problem 2
+### Problem 2
 
 ```{r,echo = FALSE}
 df <- read.table("HWARMA.txt", header= TRUE)
 ```
 
-##### Time Series A
+#### Time Series A
 
 ##### Visual
 
@@ -66,15 +66,17 @@ There are no obvious trends and the time series doesn't exhibit any obvious hete
 
 ##### ACF and PACF Examination
 
-```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
 par(mfrow = c(1, 2))
 acf1(df$dat.A)
 pacf(df$dat.A)
 ```
 
-Looking at the ACF there is a large spike at Lag = 1, before the rest of the spikes seem to slowly decay. The PACF has similar results that show a spike at 1 and then oscillating decay.
+Looking at the ACF there is a large spike at Lag = 1, before cutting off. The PACF has similar results that show a spike at 1 and then oscillating decay. Of the 25 lags, 24 (96%) are within the dashed blue lines (2 SD) which suggest that it may be a white noise process, but with the large spike, it's unlikely. Looking at the PACF we can see that there are spikes past that lie outside the bounds. I would say based on the ACF and PACF that this time series is not a white noise process.
 
-We'll fit an $MA(1)$ given the large spike at 1 within the ACF:
+##### Model Selection
+
+We'll fit an $MA(1)$ given the large spike at 1 and then dropping within the bounds as shown in the ACF plot. Additionally, the PACF exhibits a tailing exponential decay which suggests it behaves similarly to an $MA(q)$:
 
 ```{r,results='hide',echo=FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
 model.A <- sarima(df$dat.A, 0,0,1, details = FALSE)
@@ -82,38 +84,140 @@ res.A <- resid(model.A$fit)
 
 par(mfrow = c(1, 2))
 
-acf(res.A, main = "ACF of Residuals")
+acf1(res.A, main = "ACF of Residuals")
 
 qqnorm(res.A, main = "Normal Q-Q Plot")
 qqline(res.A, col = "blue")
 ```
 
-##### Time Series B
+After fitting the $MA(1)$ to the data and inspecting the residuals, it appears that the model was roughly appropriate. All the lags past zero are within the bounds meaning the model removed the spike at lag h=1. And looking at the Q-Q plot, the sample quantiles lie close to the lines between -2 and 2 with the tails that don't align nearly as well.
 
-```{r,echo = FALSE}
+#### Time Series B
+
+##### Visual
+
+We'll plot the data and look for trends and seasonality.
+
+```{r,echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
 tsplot(df$dat.B, ylab = "dat.B")
 ```
 
-##### Time Series C
+Looking at the raw data, there might be a pattern. The data doesn't seem exactly random with what may be pseudo cyclic. There aren't enough data points to determine if this pattern would continue. The mean seems roughly zero and I'd say this process is stationary. Simply from looking at the raw data I would guess that this is not a white noise process.
 
-```{r,echo = FALSE}
+##### ACF and PACF Examination
+
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
+par(mfrow = c(1, 2))
+acf1(df$dat.B)
+pacf(df$dat.B)
+```
+
+With strikingly similar ACF/PACF plots, this time series has a couple spikes at lags 8 and 14 that aren't within the bounds.  However, for a white noise process we'd expect about 95% of our lag values to be within the blue lines, it's safe to say they may be a part of the 5% (1.25 or so spikes out of 25) that aren't within. Both plots drop to near zero after Lag 0 and stay within the bounds a bit before having spikes. This suggests near-zero correlation with the immediate past. It's reasonable to say this may very well be a white noise process.
+
+##### Model Selection
+
+No ARMA modeling needed due to the fact that this could very well be a white noise process.
+
+#### Time Series C
+
+##### Visual
+
+We'll plot the data and look for trends and seasonality.
+
+```{r,echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
 tsplot(df$dat.C, ylab = "dat.C")
 ```
 
-##### Time Series D
+Visually, this might be a white noise process. The time series oscillates around zero suggesting mean zero and no heteroskedasticity. However, there is an almost cyclic repetition starting around Time = 25 and repeating every 50 or so where there is a rise in the values to around 2 or more. So perhaps this is a stationary time series, but not a white noise process.
 
-```{r,echo = FALSE}
+##### ACF and PACF Examination
+
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
+par(mfrow = c(1, 2))
+acf1(df$dat.C)
+pacf(df$dat.C)
+```
+
+After looking the ACF and PACF I can almost certainly say that this is not a white noise process. The ACF shows spikes at Lag 1 and 2 that suggest immediate correlation with the previous term(s). Then the lag values drop and oscillate which we may consider exponential decay. Then looking at the PACF, there's a spike at lag = 1 and then it cuts off to near-zero. From both plots, I don't think this is a white noise process.
+
+##### Model Selection
+
+The behavior exhibited within the ACF/PACF (exponential decay/cuts off to zero) plots strongly suggest that this is an $AR(1)$ process. As discussed in class, for an $AR(p)$ process, the PACF goes to exactly zero (roughly zero) after lag h=p and at lag p it's non-zero. This is exactly that behavior at h=1, so I believe it's appropriate to use and $AR(1)$.
+
+```{r,results='hide',echo=FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
+model.C <- sarima(df$dat.A, 1,0,0, details = FALSE)
+res.C <- resid(model.C$fit)
+
+par(mfrow = c(1, 2))
+
+acf1(res.C, main = "ACF of Residuals")
+
+qqnorm(res.C, main = "Normal Q-Q Plot")
+qqline(res.C, col = "blue")
+```
+
+Analyzing the ACF/Q-Q Plot of the residuals, I believe the $AR(1)$ was the correct choice. The ACF shows that after lag = 0, all the lag values lie within the boundary suggesting it's a white noise process now. Additionally, the Q-Q plot has a decent fit for -1.5 and 1.5 but with the left end below/right end above it suggest heavier tails.
+
+#### Time Series D
+
+##### Visual
+
+We'll plot the data and look for trends and seasonality.
+
+```{r,echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
 tsplot(df$dat.D, ylab = "dat.D")
 ```
 
-##### Time Series E
+This seems pretty obviously not a white noise process. No mean zero and an irregular dip every $\sim25-35$ units or so. 
 
-```{r,echo = FALSE}
+##### ACF and PACF Examination
+
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
+par(mfrow = c(1, 2))
+acf1(df$dat.D)
+pacf(df$dat.D)
+```
+
+The ACF and PACF are pretty valuable as they show that all the shown lag values fall within the 95% CI. This suggest that if the mean were zero, this would be a white noise process.
+
+##### Model Selection
+
+#### Time Series E
+
+##### Visual
+
+We'll plot the data and look for trends and seasonality.
+
+```{r,echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
 tsplot(df$dat.E, ylab = "dat.E")
 ```
 
-##### Time Series F
+##### ACF and PACF Examination
 
-```{r,echo = FALSE}
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
+par(mfrow = c(1, 2))
+acf1(df$dat.E)
+pacf(df$dat.E)
+```
+
+##### Model Selection
+
+#### Time Series F
+
+##### Visual
+
+We'll plot the data and look for trends and seasonality.
+
+```{r,echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
 tsplot(df$dat.F, ylab = "dat.F")
 ```
+
+##### ACF and PACF Examination
+
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
+par(mfrow = c(1, 2))
+acf1(df$dat.F)
+pacf(df$dat.F)
+```
+
+##### Model Selection
