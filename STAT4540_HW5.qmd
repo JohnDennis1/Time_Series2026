@@ -1,0 +1,75 @@
+---
+title: "STAT4540_HW4"
+author: "John Dennis"
+format: pdf
+---
+
+```{r,,message=FALSE,echo=FALSE}
+library(astsa)
+library(tidyverse)
+library(tseries)
+```
+
+### Problem 1
+
+#### Part A
+
+```{r}
+set.seed(303)
+
+simulated_data <- arima.sim(model = list(ar = 0.9, ma = -0.9), n = 500)
+
+plot(simulated_data, main = "Simulated ARMA(1,1) Process", ylab = "Xt", col = "blue")
+```
+
+#### Part B
+
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
+par(mfrow = c(1, 2))
+acf1(simulated_data)
+pacf(simulated_data)
+```
+
+### Part C
+
+```{r}
+fit <- arima(simulated_data, order = c(1, 0, 1), method = "ML")
+print(fit)
+
+phi_hat   <- fit$coef["ar1"]
+theta_hat <- fit$coef["ma1"]
+```
+
+#### Part D
+
+```{r, warning=FALSE}
+N <- 500
+phi_hats <- numeric(N)
+theta_hats <- rep(phi_hats)
+
+for (i in 1:N) {
+  temp_data <- arima.sim(model = list(ar = 0.9, ma = -0.9), n = 500)
+  
+  model <- arima(temp_data, order = c(1, 0, 1), method = "ML") 
+
+  phi_hats[i]   <- model$coef["ar1"]
+  theta_hats[i] <- model$coef["ma1"]
+}
+
+par(mfrow = c(1, 2))
+hist(phi_hats, main = "Histogram of Phi Estimates", xlab = "Estimated Phi", col = "lightblue")
+hist(theta_hats, main = "Histogram of Theta Estimates", xlab = "Estimated Theta", col = "lightgreen")
+
+```
+
+### Problem 2
+
+#### Part A
+
+Starting with what we're given, we have an $MA(2)$ process defined as:
+
+$$
+X_t = W_t +\frac{1}{2}W_{t-1}+\frac{1}{4}W_{t-2}, \quad W_t \overset{i.i.d}\sim WN(0,1)
+$$
+
+
