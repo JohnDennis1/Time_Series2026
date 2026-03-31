@@ -12,279 +12,147 @@ library(tseries)
 
 ### Problem 1
 
-Considering the given $AR(2)$, $X_t = -0.9X_{t-2}+W_t$ we can find the roots by grouping and solving for the roots:
+#### Part A
 
-$$
-\begin{gathered}
-X_t = -0.9X_{t-2}+W_t \\
-X_t + 0.9X_{t-2} = W_t \\
-(1+0.9B^2)X_t = W_t \\ 
-\end{gathered}
-$$
+```{r, echo=FALSE}
+set.seed(303)
 
-Once we're here we can solve for the roots by setting $\phi(z)=0$. Note that we replace B with $z \in \mathbb{C}$:
+simulated_data <- arima.sim(model = list(ar = 0.9, ma = -0.9), n = 500)
 
-$$
-\begin{gathered}
-1+0.9z^2 = 0 \\
-0.9z^2 = -1\\ 
-z^2 = -\frac{10}{9} \\
-\implies \boxed{z = \pm \sqrt{\frac{10}{9}}i= \pm1.054i}
-\end{gathered}
-$$
-
-And because $\pm 1.054$ falls outside the unit circle, this $AR(2)$ process is causal. Now focusing on the ACF:
-
-```{r,echo=FALSE}
-ACF = ts(ARMAacf(ar=c(0,-0.9), lag=48), start=0, freq=12)
-tsplot(ACF, type="h", xlab="LAG", ylim=c(-1,1), gg=TRUE, col=4, xaxt="n")
-abline(h=0, col=8)
-mtext(side=1, at=seq(0,4,by=.5), text=seq(0,48,by=6), cex=.8)
+plot(simulated_data, main = "Simulated ARMA(1,1) Process", ylab = "Xt", col = "blue")
 ```
+
+One thing to point out is that when rewritten our ARMA process becomes:
+
+$$
+(1-0.9B)X_t = (1-0.9B)W_t
+$$
+
+When we solve for the roots to find $\phi$ and $\theta$, we end up with $X_t=W_t$ which has no unique solutions.
+
+#### Part B
+
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
+par(mfrow = c(1, 2))
+acf1(simulated_data)
+pacf(simulated_data)
+```
+
+I would argue that ARMA(1,1) is not necessarily appropriate. Since there is no obvious correlation in either the ACF or PACF at any given point, that suggest that this process may be white noise.
+
+### Part C
+
+```{r,warning=FALSE}
+fit <- arima(simulated_data, order = c(1, 0, 1), method = "ML")
+
+phi_hat   <- fit$coef["ar1"]
+theta_hat <- fit$coef["ma1"]
+
+cat(sprintf("The estimmates for the phi is %.3f
+and for the theta is %.3f", phi_hat,theta_hat))
+```
+
+The fact that they're identical supports our previous claim that the roots are irrelevant because there is no unique maximum for the function to find.
+
+#### Part D
+
+```{r, warning=FALSE,echo=FALSE}
+N <- 1000
+phi_hats <- numeric(N)
+theta_hats <- rep(phi_hats)
+
+for (i in 1:N) {
+  set.seed(i)
+  temp_data <- arima.sim(model = list(ar = 0.9, ma = -0.9), n = 500)
+  
+  model <- arima(temp_data, order = c(1, 0, 1), method = "ML") 
+
+  phi_hats[i]   <- model$coef["ar1"]
+  theta_hats[i] <- model$coef["ma1"]
+}
+
+par(mfrow = c(1, 2))
+hist(phi_hats, main = "Histo. of Phi Est.", xlab = "Est. Phi", col = "lightblue")
+hist(theta_hats, main = "Histo. of Theta Est.", xlab = "Est. Theta", col = "lightgreen")
+
+```
+
+Once, again just to reiterate, the histograms show no significant of one parameter being better than any others. The maximum likelihood estimator is unable to identify any particular max to converge to and so the parameters suggested become random.
 
 ### Problem 2
 
-```{r,echo = FALSE}
-df <- read.table("HWARMA.txt", header= TRUE)
-```
-
-#### Time Series A
-
-##### Visual
-
-We'll plot the data and look for trends and seasonality.
-
-```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
-tsplot(df$dat.A, ylab = "dat.A")
-```
-
-There are no obvious trends and the time series doesn't exhibit any obvious heteroskedasticity. With this being said I would say that there is no trend or seasonality to remove prior to analyzing. Based solely on the raw data plot, it could be a white noise process considering:
-
--   Mean is roughly zero
--   No Patterns
--   No Seasonality
-
-##### ACF and PACF Examination
-
-```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
-par(mfrow = c(1, 2))
-acf1(df$dat.A)
-pacf(df$dat.A)
-```
-
-Looking at the ACF there is a large spike at Lag = 1, before cutting off. The PACF has similar results that show a spike at 1 and then oscillating decay. Of the 25 lags, 24 (96%) are within the dashed blue lines (2 SD) which suggest that it may be a white noise process, but with the large spike, it's unlikely. Looking at the PACF we can see that there are spikes past that lie outside the bounds. I would say based on the ACF and PACF that this time series is not a white noise process.
-
-##### Model Selection
-
-We'll fit an $MA(1)$ given the large spike at 1 and then dropping within the bounds as shown in the ACF plot. Additionally, the PACF exhibits a tailing exponential decay which suggests it behaves similarly to an $MA(q)$:
-
-```{r,results='hide',echo=FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
-model.A <- sarima(df$dat.A, 0,0,1, details = FALSE)
-res.A <- resid(model.A$fit)
-
-par(mfrow = c(1, 2))
-
-acf1(res.A, main = "ACF of Residuals")
-
-qqnorm(res.A, main = "Normal Q-Q Plot")
-qqline(res.A, col = "blue")
-```
-
-After fitting the $MA(1)$ to the data and inspecting the residuals, it appears that the model was roughly appropriate. All the lags past zero are within the bounds meaning the model removed the spike at lag h=1. And looking at the Q-Q plot, the sample quantiles lie close to the lines between -2 and 2 with the tails that don't align nearly as well.
-
-#### Time Series B
-
-##### Visual
-
-We'll plot the data and look for trends and seasonality.
-
-```{r,echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
-tsplot(df$dat.B, ylab = "dat.B")
-```
-
-Looking at the raw data, there might be a pattern. The data doesn't seem exactly random with what may be pseudo cyclic. There aren't enough data points to determine if this pattern would continue. The mean seems roughly zero and I'd say this process is stationary. Simply from looking at the raw data I would guess that this is not a white noise process.
-
-##### ACF and PACF Examination
-
-```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
-par(mfrow = c(1, 2))
-acf1(df$dat.B)
-pacf(df$dat.B)
-```
-
-With strikingly similar ACF/PACF plots, this time series has a couple spikes at lags 8 and 14 that aren't within the bounds.  However, for a white noise process we'd expect about 95% of our lag values to be within the blue lines, it's safe to say they may be a part of the 5% (1.25 or so spikes out of 25) that aren't within. Both plots drop to near zero after Lag 0 and stay within the bounds a bit before having spikes. This suggests near-zero correlation with the immediate past. It's reasonable to say this may very well be a white noise process.
-
-##### Model Selection
-
-No ARMA modeling needed due to the fact that this could very well be a white noise process.
-
-#### Time Series C
-
-##### Visual
-
-We'll plot the data and look for trends and seasonality.
-
-```{r,echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
-tsplot(df$dat.C, ylab = "dat.C")
-```
-
-Visually, this might be a white noise process. The time series oscillates around zero suggesting mean zero and no heteroskedasticity. However, there is an almost cyclic repetition starting around Time = 25 and repeating every 50 or so where there is a rise in the values to around 2 or more. So perhaps this is a stationary time series, but not a white noise process.
-
-##### ACF and PACF Examination
-
-```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
-par(mfrow = c(1, 2))
-acf1(df$dat.C)
-pacf(df$dat.C)
-```
-
-After looking the ACF and PACF I can almost certainly say that this is not a white noise process. The ACF shows spikes at Lag 1 and 2 that suggest immediate correlation with the previous term(s). Then the lag values drop and oscillate which we may consider exponential decay. Then looking at the PACF, there's a spike at lag = 1 and then it cuts off to near-zero. From both plots, I don't think this is a white noise process.
-
-##### Model Selection
-
-The behavior exhibited within the ACF/PACF (exponential decay/cuts off to zero) plots strongly suggest that this is an $AR(1)$ process. As discussed in class, for an $AR(p)$ process, the PACF goes to exactly zero (roughly zero) after lag h=p and at lag p it's non-zero. This is exactly that behavior at h=1, so I believe it's appropriate to use and $AR(1)$.
-
-```{r,results='hide',echo=FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
-model.C <- sarima(df$dat.A, 1,0,0, details = FALSE)
-res.C <- resid(model.C$fit)
-
-par(mfrow = c(1, 2))
-
-acf1(res.C, main = "ACF of Residuals")
-
-qqnorm(res.C, main = "Normal Q-Q Plot")
-qqline(res.C, col = "blue")
-```
-
-Analyzing the ACF/Q-Q Plot of the residuals, I believe the $AR(1)$ was the correct choice. The ACF shows that after lag = 0, all the lag values lie within the boundary suggesting it's a white noise process now. Additionally, the Q-Q plot has a decent fit for -1.5 and 1.5 but with the left end below/right end above it suggest heavier tails.
-
-#### Time Series D
-
-##### Visual
-
-We'll plot the data and look for trends and seasonality.
-
-```{r,echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
-tsplot(df$dat.D, ylab = "dat.D")
-```
-
-This seems pretty obviously not a white noise process. No mean zero and an irregular dip every $\sim25-35$ units or so. The data has weird almost flat points  at these irregular dips especially at 160-170.
-
-##### ACF and PACF Examination
-
-```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
-par(mfrow = c(1, 2))
-acf1(df$dat.D)
-pacf(df$dat.D)
-```
-
-The ACF and PACF are pretty valuable as they show that all the shown lag values fall within the 95% CI. This suggests that there is no significant autocorrelation between terms, but regardless, isn't a white noise process.
-
-##### Model Selection
-
-Due to the structure of the data, no ARMA process is appropriate. Although no significant autocorrelation between terms exist, the data is very structured and doesn't resemble a consistent or known pattern.
-
-#### Time Series E
-
-##### Visual
-
-We'll plot the data and look for trends and seasonality.
-
-```{r,echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
-tsplot(df$dat.E, ylab = "dat.E")
-```
-
-Visually, this is not a white noise process. It may be stationary with a mean around 15 or so, but it's not white noise. There doesn't seem to be any trends nor seasonality that could be removed. Prior to using an ARMA models, we'll center the mean at zero. One last thing to note is that it appears to have clusters of points above and below the points that may suggest Autoregressive behavior.
-
-##### ACF and PACF Examination
-
-```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
-par(mfrow = c(1, 2))
-acf1(df$dat.E)
-pacf(df$dat.E)
-```
-
-Looking at the ACF we can see there are about 4 lag spikes that lie outside the bounds, but none that are particularly large. On the other other the PACF goes to near zero after lag h=1, so perhaps we can observe the behavior from both ACF and PACF as Autoregressive which aligns with my previous hypothesis. Another thing to mention is that in both plots, there exists spikes at lag h=12 which may suggest this is annual seasonality.
-
-##### Model Selection
-
-Prior to fitting an ARMA model, we must center the mean to zero and then fit a seasonal ARMA model to account for the lag spikes at h=12.
-
-```{r,results='hide',echo=FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
-centered_dat.E <- df$dat.E - mean(df$dat.E)
-model.E <- sarima(centered_dat.E, 1, 0, 0, 1, 0, 0, 12, details=FALSE)
-
-res.E <- resid(model.E$fit)
-
-par(mfrow = c(1, 2))
-
-acf1(res.E, main = "ACF of Residuals")
-
-qqnorm(res.E, main = "Normal Q-Q Plot")
-qqline(res.E, col = "blue")
-```
-
-After creating the model, there is near-zero lag values at h=1,2 and 12 which suggests that the immediate autocorrelation and seasonality was corrected. The spike at 13 may just be part of the 5% that don't fall within the bounds. The Q-Q plot has a worse fit for the values beyond -1 and 1, especially for +2. This suggests a right skew as the sample points are in a higher quantile than the theoretical quantile. We can consider the residuals to be white noise with $\sim95\%$ of the lag values within the bounds.
-
-#### Time Series F
-
-##### Visual
-
-We'll plot the data and look for trends and seasonality.
-
-```{r,echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
-tsplot(df$dat.F, ylab = "dat.F")
-```
-
-This time series is not a white noise process by some pretty obvious signs. It's not mean zero and there's almost a negative linear trend. There also seems to be some sort of regular cyclic pattern as well that's happening pretty frequently. Prior to using an ARMA model, we'd have to remove a trend, regular seasonality, and make it mean zero.
-
-##### ACF and PACF Examination
-
-```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
-par(mfrow = c(1, 2))
-acf1(df$dat.F)
-pacf(df$dat.F)
-```
-
-Both ACF and PACF plots show strong autocorrelation that happens periodically with decreasing spikes at 1, 12, 24. The ACF is showing a slow decay with potential annual seasonality due to the lag at h = 12. This reinforces the idea that the this time series has strong seasonality and negative linear trend.
-
-##### Model Selection
-
-In order to fit and ARMA model we need to consider a few things:
-
-- Making the time series mean zero
-- Removing the Negative Linear Trend
-- Removing the Seasonality
-
-And this will all be done using differencing in the `sarima()` function.
-
-```{r,results='hide',echo=FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
-centered_dat.F <- df$dat.F - mean(df$dat.F)
-model.F <- sarima(centered_dat.F, 0, 1, 0, 0, 1, 0, 12, details=FALSE)
-
-res.F <- resid(model.F$fit)
-
-par(mfrow = c(1, 2))
-
-acf1(res.F, main = "ACF of Residuals")
-
-qqnorm(res.F, main = "Normal Q-Q Plot")
-qqline(res.F, col = "blue")
-```
-
-After the filtering to remove the trend and seasonality it still appears to have seasonality at 12 and correlation at lag h=1,2. The Q-Q plot has an odd, but decent fit between -2 and 2. To revise the model I may add a q of 2 and Q of 1 because I see that in the ACF the correlation cuts off after lag h=2 and then there's a strong negatively correlated lag at lag h=12.
-
-```{r,results='hide',echo=FALSE, fig.align = 'center', fig.width = 12, fig.height = 8}
-model2.F <- sarima(centered_dat.F, 0, 1, 2, 0, 1, 1, 12, details=FALSE)
-
-res2.F <- resid(model2.F$fit)
-
-par(mfrow = c(1, 2))
-
-acf1(res2.F, main = "ACF of Residuals")
-
-qqnorm(res2.F, main = "Normal Q-Q Plot")
-qqline(res2.F, col = "blue")
-```
-
-The residuals are resembling a white noise process much more now with the lag spikes removed and everything falling within the 95% CI. The Q-Q plot shows a much worse fit outside -1 to 1 with ends suggesting heavy tails.
+#### Part A
+
+Starting with what we're given, we have an $MA(2)$ process defined as:
+
+$$
+X_t = W_t +\frac{1}{2}W_{t-1}+\frac{1}{4}W_{t-2}, \quad W_t \overset{i.i.d}\sim WN(0,1)
+$$
+
+We know that for $\gamma(h)$ as $h$ increases, at a certain point (past h=2), that the ACVF will become zero. As the lags increase, the overlapping terms decrease.
+
+$$
+\gamma(h) = \left\{ 
+\begin{array}{ll}
+    \frac{21}{16} & \text{if } h = 0 \\
+    \frac{5}{8} & \text{if } |h| = 1 \\
+    \frac{1}{4} & \text{if } |h| = 2 \\
+    0 & \text{if } |h| > 2
+\end{array}
+\right.
+$$
+
+#### Part B
+
+To find the joint distribution of $\mathbf{X}=(X_1,X_2,X_3,X_4)^T$ we'll use the hint that they're multivariate normal. We know that the $\mathbb{E}[\mathbf{X}]$ will have the dimensions of 4x1 and $\Sigma$ will have dimensions 4x4.
+
+For the expectation vector it's simply:
+
+$$ 
+\mathbb{E}[\mathbf{X}]=
+\begin{pmatrix}
+\mathbb{E}[X_1] \\
+\mathbb{E}[X_2] \\
+\mathbb{E}[X_3] \\
+\mathbb{E}[X_4]
+\end{pmatrix}
+=
+\begin{pmatrix}
+0 \\
+0 \\
+0 \\
+0
+\end{pmatrix}
+$$
+
+Next we look at the Covariance or Variance Matrix. We know that the diagonals will represent $\text{Cov}(X_n,X_n)$ or simply $\text{Var}(X_n), \forall n \in \{1,2,3,4\}$. And the off diagonals will be covariances with the other terms. It's important to note that $\text{Cov}(X_1,X_4)$ will be zero because the lag is greater than 2.
+
+$$
+\Gamma = 
+\begin{pmatrix}
+\frac{21}{16} & \frac{5}{8} & \frac{1}{4} & 0\\
+\frac{5}{8} & \frac{21}{16} & \frac{5}{8} & \frac{1}{4} \\
+\frac{1}{4} & \frac{5}{8} & \frac{21}{16} & \frac{5}{8} \\
+0 & \frac{1}{4} & \frac{5}{8} & \frac{21}{16}
+\end{pmatrix}
+$$
+
+Combining all of this and knowing that $\mathbf{X}$ is a multivariate normal, we can express this as:
+
+$$ 
+\mathbf{X} \sim N \left(
+\begin{pmatrix}
+0 \\
+0 \\
+0 \\
+0
+\end{pmatrix}
+,
+\begin{pmatrix}
+\frac{21}{16} & \frac{5}{8} & \frac{1}{4} & 0\\
+\frac{5}{8} & \frac{21}{16} & \frac{5}{8} & \frac{1}{4} \\
+\frac{1}{4} & \frac{5}{8} & \frac{21}{16} & \frac{5}{8} \\
+0 & \frac{1}{4} & \frac{5}{8} & \frac{21}{16}
+\end{pmatrix}
+\right)
+$$
