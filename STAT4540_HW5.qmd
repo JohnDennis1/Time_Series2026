@@ -14,13 +14,21 @@ library(tseries)
 
 #### Part A
 
-```{r}
+```{r, echo=FALSE}
 set.seed(303)
 
 simulated_data <- arima.sim(model = list(ar = 0.9, ma = -0.9), n = 500)
 
 plot(simulated_data, main = "Simulated ARMA(1,1) Process", ylab = "Xt", col = "blue")
 ```
+
+One thing to point out is that when rewritten our ARMA process becomes:
+
+$$
+(1-0.9B)X_t = (1-0.9B)W_t
+$$
+
+When we solve for the roots to find $\phi$ and $\theta$, we end up with $X_t=W_t$ which has no unique solutions.
 
 #### Part B
 
@@ -30,24 +38,31 @@ acf1(simulated_data)
 pacf(simulated_data)
 ```
 
+I would argue that ARMA(1,1) is not necessarily appropriate. Since there is no obvious correlation in either the ACF or PACF at any given point, that suggest that this process may be white noise.
+
 ### Part C
 
-```{r}
+```{r,warning=FALSE}
 fit <- arima(simulated_data, order = c(1, 0, 1), method = "ML")
-print(fit)
 
 phi_hat   <- fit$coef["ar1"]
 theta_hat <- fit$coef["ma1"]
+
+cat(sprintf("The estimmates for the phi is %.3f
+and for the theta is %.3f", phi_hat,theta_hat))
 ```
+
+The fact that they're identical supports our previous claim that the roots are irrelevant because there is no unique maximum for the function to find.
 
 #### Part D
 
-```{r, warning=FALSE}
-N <- 500
+```{r, warning=FALSE,echo=FALSE}
+N <- 1000
 phi_hats <- numeric(N)
 theta_hats <- rep(phi_hats)
 
 for (i in 1:N) {
+  set.seed(i)
   temp_data <- arima.sim(model = list(ar = 0.9, ma = -0.9), n = 500)
   
   model <- arima(temp_data, order = c(1, 0, 1), method = "ML") 
@@ -57,10 +72,12 @@ for (i in 1:N) {
 }
 
 par(mfrow = c(1, 2))
-hist(phi_hats, main = "Histogram of Phi Estimates", xlab = "Estimated Phi", col = "lightblue")
-hist(theta_hats, main = "Histogram of Theta Estimates", xlab = "Estimated Theta", col = "lightgreen")
+hist(phi_hats, main = "Histo. of Phi Est.", xlab = "Est. Phi", col = "lightblue")
+hist(theta_hats, main = "Histo. of Theta Est.", xlab = "Est. Theta", col = "lightgreen")
 
 ```
+
+Once, again just to reiterate, the histograms show no significant of one parameter being better than any others. The maximum likelihood estimator is unable to identify any particular max to converge to and so the parameters suggested become random.
 
 ### Problem 2
 
@@ -72,4 +89,70 @@ $$
 X_t = W_t +\frac{1}{2}W_{t-1}+\frac{1}{4}W_{t-2}, \quad W_t \overset{i.i.d}\sim WN(0,1)
 $$
 
+We know that for $\gamma(h)$ as $h$ increases, at a certain point (past h=2), that the ACVF will become zero. As the lags increase, the overlapping terms decrease.
 
+$$
+\gamma(h) = \left\{ 
+\begin{array}{ll}
+    \frac{21}{16} & \text{if } h = 0 \\
+    \frac{5}{8} & \text{if } |h| = 1 \\
+    \frac{1}{4} & \text{if } |h| = 2 \\
+    0 & \text{if } |h| > 2
+\end{array}
+\right.
+$$
+
+#### Part B
+
+To find the joint distribution of $\mathbf{X}=(X_1,X_2,X_3,X_4)^T$ we'll use the hint that they're multivariate normal. We know that the $\mathbb{E}[\mathbf{X}]$ will have the dimensions of 4x1 and $\Gamma$ will have dimensions 4x4.
+
+For the expectation vector it's simply:
+
+$$ 
+\mathbb{E}[\mathbf{X}]=
+\begin{pmatrix}
+\mathbb{E}[X_1] \\
+\mathbb{E}[X_2] \\
+\mathbb{E}[X_3] \\
+\mathbb{E}[X_4]
+\end{pmatrix}
+=
+\begin{pmatrix}
+0 \\
+0 \\
+0 \\
+0
+\end{pmatrix}
+$$
+
+Next we look at the Covariance or Variance Matrix. We know that the diagonals will represent $\text{Cov}(X_n,X_n)$ or simply $\text{Var}(X_n), \forall n \in \{1,2,3,4\}$. And the off diagonals will be covariances with the other terms. It's important to note that $\text{Cov}(X_1,X_4)$ will be zero because the lag is greater than 2.
+
+$$
+\Gamma = 
+\begin{pmatrix}
+\frac{21}{16} & \frac{5}{8} & \frac{1}{4} & 0\\
+\frac{5}{8} & \frac{21}{16} & \frac{5}{8} & \frac{1}{4} \\
+\frac{1}{4} & \frac{5}{8} & \frac{21}{16} & \frac{5}{8} \\
+0 & \frac{1}{4} & \frac{5}{8} & \frac{21}{16}
+\end{pmatrix}
+$$
+
+Combining all of this and knowing that $\mathbf{X}$ is a multivariate normal, we can express this as:
+
+$$ 
+\mathbf{X} \sim N \left(
+\begin{pmatrix}
+0 \\
+0 \\
+0 \\
+0
+\end{pmatrix}
+,
+\begin{pmatrix}
+\frac{21}{16} & \frac{5}{8} & \frac{1}{4} & 0\\
+\frac{5}{8} & \frac{21}{16} & \frac{5}{8} & \frac{1}{4} \\
+\frac{1}{4} & \frac{5}{8} & \frac{21}{16} & \frac{5}{8} \\
+0 & \frac{1}{4} & \frac{5}{8} & \frac{21}{16}
+\end{pmatrix}
+\right)
+$$
