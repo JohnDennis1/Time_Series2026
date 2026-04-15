@@ -1,0 +1,46 @@
+---
+title: "STAT4540_HW6"
+author: "John Dennis"
+format: pdf
+---
+
+### Problem 1
+
+#### Part A
+
+#### Part B
+
+### Problem 2
+
+```{r,message=FALSE,warning=FALSE}
+library(ggplot2)
+library(astsa)
+library(tidyverse)
+library(tidyr)
+data <- read.csv("FoothillsLab-WindSpeed-20260401-20260402.csv")
+data <- data |> 
+  mutate(wspd = log(wspd)) |>
+  head(288)
+```
+
+#### Part A
+
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 9, fig.height = 4}
+tsplot(data$wspd, ylab = "log_wspd")
+```
+
+```{r,results='hide',echo = FALSE, fig.align = 'center', fig.width = 12, fig.height = 7}
+par(mfrow = c(1, 2))
+acf1(data$wspd)
+pacf(data$wspd)
+```
+
+#### Part B
+
+#### Part C
+
+#### Part D
+
+#### Part E
+
+#### Part F
